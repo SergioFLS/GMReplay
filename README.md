@@ -8,9 +8,9 @@ GMReplay relies on the built-in playback and recording features present in GameM
 GMReplay is currently in early development. See the below roadmap for future plans.
 
 ## Roadmap
-**Phase 1 - Minimum implementation (In development)**
-- [ ] Realtime recording and playback
-- [ ] Interactive command-line interface
+**Phase 1 - Minimum implementation (Completed, pending testing and QOL improvements)**
+- [X] Realtime recording and playback
+- [X] Interactive command-line interface
 
 **Phase 2 - Piano roll interface (Not started)**
 - [ ] Piano roll interface
