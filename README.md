@@ -5,12 +5,13 @@ GMReplay is a program for creating tool-assisted replays of Windows GameMaker ga
 
 GMReplay relies on the built-in playback and recording features present in GameMaker games for frame-accurate input playback regardless of the Windows timing inaccuracies that otherwise cause difficulty with building conventional TAS tools for Windows games.
 
-GMReplay is currently in early development. See the below roadmap for future plans.
+GMReplay is currently in development. See the below roadmap for future plans.
 
 ## Roadmap
-**Phase 1 - Minimum implementation (Completed, pending testing)**
+**Phase 1 - Minimum implementation (Completed)**
 - [X] Realtime recording and playback
 - [X] Interactive command-line interface
+- [X] Support for keyboard_check_direct and mouse inputs
 
 **Phase 2 - Piano roll interface (Not started)**
 - [ ] Piano roll interface
@@ -19,6 +20,8 @@ GMReplay is currently in early development. See the below roadmap for future pla
 **Phase 3 - Function hooking (Not started)**
 - [ ] randomize hooking
 - [ ] keyboard_check_direct hooking
+- [ ] Mouse controls via function hooking
+- [ ] Switch between recording and playback
 
 **Phase 4 - Game loop hooking (Not started)**
 - [ ] Frame advance
