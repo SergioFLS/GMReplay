@@ -40,3 +40,19 @@ GMReplay is currently in development. See the below roadmap for future plans.
 - [ ] Annotations/authors/subtitles
 - [ ] System time modification
 - [ ] On-screen display of inputs, frames, etc.
+
+## How to use
+
+Because this is in early development, it may not be feature-complete or user-friendly yet. To run GMReplay, you first need Python (3.10 or higher version).
+
+Then, download and run gmreplay.py. This will open a command-line interface, where you can either start a recording or play back a recording.
+
+After selecting an option, GMReplay will prompt you to choose the exe file for the game (GameMaker Studio 1 games or later), the data.win (if applicable), and the .gmr replay file.
+
+Once your selections have been made, GMReplay will attempt to create a patched version of the exe file. This is stored separately from the exe file you selected. The patch enables mouse inputs, fixes an issue with certain keyboard functions, and forces deterministic RNG.
+
+After the patching process, the game will open and recording or playback will begin. There are currently no speed controls, so the recordings are all done in realtime.
+
+## Issues
+
+If you encounter any issues, please submit an issue on Github with the **game's name and version**, **GMReplay's version**, and **steps to reproduce** the issue.
