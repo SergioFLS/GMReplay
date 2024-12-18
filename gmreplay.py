@@ -4,7 +4,7 @@ import os
 import re
 
 
-VERSION_NUMBER = "v0.0.3"
+VERSION_NUMBER = "v0.0.4"
 
 
 def main():
@@ -30,6 +30,17 @@ def main():
 def folder(filePath):
     ## Returns the folder that contains the given file
     return "/".join(re.split(r'/|\\', filePath)[:-1]) # get stickbugged lol
+
+
+def intToBytes(integer):
+    ## Returns the bytes representation of a positive integer
+    if integer < 0:
+        return b"\x00"
+
+    hexStr = hex(integer).removeprefix("0x")
+    hexStr = hexStr.zfill(len(hexStr) + len(hexStr) % 2)
+
+    return bytes.fromhex(hexStr)
 
 
 def makeSelection(validOptions, inputText = ""):
@@ -158,43 +169,36 @@ def genPatchedExe(exePath, patchedName="__temp_GMR_patched_runner.exe"):
 
 
     # Patch keyboard_check_direct next
-    kcdStringOffset = bytes(hex(exeData.find(b"keyboard_check_direct\x00")), 'utf-8')
-    kcStringOffset = bytes(hex(exeData.find(b"keyboard_check\x00")), 'utf-8')
+    kcdStringOffset = exeData.find(b"keyboard_check_direct\x00")
+    kcStringOffset = exeData.find(b"keyboard_check\x00")
 
-    # Actual offsets are always at least 0x400000 away and multiples of 0x100 away
-    # TODO: find a better way to get this number
     kcdFuncDefOffset = -1
     kcFuncDefOffset = -1
-    for i in range(0x400C00, 0x402000, 0x100):
 
-        # First write out the address in hex
-        hexVal = hex(int(kcStringOffset, 16) + i)[2:]
-        if len(hexVal) % 2 != 0:
-            hexVal = "0" + hexVal
+    # Find the magic word representing the start of the image optional header
+    imgOptHeadrAddr = exeData.find(b"\x0b\x01", 0x0, 0x200) # It should be at the beginning, otherwise oopsies
 
-        # Search for the address, but flip the address's bytes around
-        kcFuncDefOffset = exeData.find(b"\x68" + bytes.fromhex(hexVal)[::-1])
+    if imgOptHeadrAddr != -1: # If it does equal -1, that's a failure and we'll kick back out to the warning below
+        baseOfDataAddr = imgOptHeadrAddr + 0x18
+        baseOfData = int.from_bytes(exeData[baseOfDataAddr:baseOfDataAddr+4][::-1]) # Reverse it and interpret it as an int
 
-        if kcFuncDefOffset != -1: # There was a hit
+        imageBaseAddr = imgOptHeadrAddr + 0x1C
+        imageBase = int.from_bytes(exeData[imageBaseAddr:imageBaseAddr+4][::-1]) # Reverse it and interpret it as an int
 
-            # Try the same number on the other one
-            hexVal = hex(int(kcdStringOffset, 16) + i)[2:]
-            if len(hexVal) % 2 != 0:
-                hexVal = "0" + hexVal
-            kcdFuncDefOffset = exeData.find(b"\x68" + bytes.fromhex(hexVal)[::-1])
-            break
+        # The baseOfData represents the offset in the file to the data section, but it overshoots (due to padding?)
+        # So we need to find the true start addr of the data section and record the difference
+        padLength = 0x60
+        dataStartAddr = exeData.rfind(bytes(padLength), 0, baseOfData) + padLength
+        dataBaseDiff = baseOfData - dataStartAddr
 
-    # If the same number didn't work, try this again
-    if kcdFuncDefOffset == -1:
-        for i in range(0x400C00, 0x402000, 0x100):
-            hexVal = hex(int(kcdStringOffset, 16) + i)[2:]
-            if len(hexVal) % 2 != 0:
-                hexVal = "0" + hexVal
-            kcdFuncDefOffset = exeData.find(b"\x68" + bytes.fromhex(hexVal)[::-1])
-            if kcdFuncDefOffset != -1:
-                break
+        # The total pointer offset is the sum of this difference and the image base address
+        dataPtrOffset = dataBaseDiff + imageBase
 
-    if kcFuncDefOffset == -1 or kcdFuncDefOffset == -1: # We couldn't do the patch
+        # Now we have what we need to find the function definitions
+        kcdFuncDefOffset = exeData.find(b"\x68" + intToBytes(kcdStringOffset + dataPtrOffset)[::-1])
+        kcFuncDefOffset = exeData.find(b"\x68" + intToBytes(kcStringOffset + dataPtrOffset)[::-1])
+
+    else: # We couldn't do the patch
         print("WARNING: Patching was partially successful. Mouse inputs will work, but direct keyboard input will not.")
 
         # Patch the mouse changes
