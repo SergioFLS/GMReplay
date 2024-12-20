@@ -1,30 +1,40 @@
 import subprocess
-import tkinter.filedialog
 import os
 import re
+import sys
+from tkinter import Tk, ttk, filedialog, IntVar
 
 
-VERSION_NUMBER = "v0.0.5"
+VERSION_NUMBER = "v0.1.0"
+MIN_PYTHON = (3, 12)
+
+RECORD = 1 # Constants for readability
+PLAY = 2
+
+GLOBAL_PADDING = 4
 
 
 def main():
     # Init
     print("GMReplay " + VERSION_NUMBER + " by OceanBagel\n")
-    selection = 0
 
-    # Main menu loop
-    while selection != 3:
-        selection = makeSelection(['1', '2', '3'], "\nPlease select from the following options:\
-        \n1. Record a movie\
-        \n2. Playback a movie\
-        \n3. Exit\n")
+    # Enforce a minimum Python version
+    if sys.version_info < MIN_PYTHON:
+        print("Python %s.%s or later is required.\n" % MIN_PYTHON)
+        return
 
-        # Perform the requested operation
-        match selection:
-            case 1 | 2: # Record a movie or Playback a movie
-                recordOrPlayMovie(selection)
-            case 3: # Exit
-                pass # Maybe do something different later, but for now we pass here and break out of the next loop iteration
+    # Initialize tkinter window
+    root, exeFileRow, dataWinFileRow, movieFileRow, recordPlayRow = initWindow()
+
+    # Execute main loop, broken apart to process stdout from the game window
+    while True:
+        root.update_idletasks()
+        root.update()
+
+        # Prevent blocking from the game process
+        if recordPlayRow.process != None:
+            for line in recordPlayRow.process.stdout:
+                print(line.decode('utf-8').strip())
 
 
 def folder(filePath):
@@ -41,65 +51,6 @@ def intToBytes(integer):
     hexStr = hexStr.zfill(len(hexStr) + len(hexStr) % 2)
 
     return bytes.fromhex(hexStr)
-
-
-def makeSelection(validOptions, inputText = ""):
-    ## Returns the integer entered provided it's included in the valid options. If a blank string is allowed, it will return 0.
-    selection = 0
-    selection = input(inputText)
-    while selection not in validOptions:
-        selection = input("Invalid input\n")
-    if selection == '':
-        selection = 0
-    return int(selection)
-
-
-def recordOrPlayMovie(selection):
-    ## Handles recording (selection is 1) or playback (selection is 2)
-
-    # Ask for a path to the game first
-    exePrompt = "Please select the game's exe file"
-    print(exePrompt)
-    pathToExe = browseFile(exePrompt, True, extensions=[("Executable files", "*.exe"), ("All files","*.*")], defaultExtension="*.exe")
-
-    # Assume the data.win, or prompt if it's not found
-    pathToDataWin = folder(pathToExe) + "/data.win"
-
-    # Does the data.win exist here?
-    if not os.path.isfile(pathToDataWin):
-        # If not, prompt for it
-        dataWinPrompt = "Please select the game's data.win file"
-        print(dataWinPrompt)
-        pathToDataWin = browseFile(dataWinPrompt, True, extensions=[("*.win files", "*.win"), ("All files","*.*")], defaultExtension="*.win",\
-                                   defaultPath=pathToDataWin.strip("data.win"))
-
-    # Ask for a path to the recording next
-    moviePrompt = "Please select the movie file"
-    print(moviePrompt)
-    pathToRecording = browseFile(moviePrompt, selection == 2, extensions=[("GMReplay files", "*.gmr"), ("All files","*.*")], defaultExtension="*.gmr")
-
-    # Attempt to patch the exe file
-    pathToExe = genPatchedExe(pathToExe)
-
-    # Run the game with the record command
-    subprocess.run([pathToExe, ("-record" if selection == 1 else "-playback"), pathToRecording, "-game", pathToDataWin, "-debugoutput", "gmrdebug.txt"])
-
-
-def browseFile(promptText, fileExists, extensions=[("All files","*.*"), ("GMReplay files", "*.gmr"), ("Executable files", "*.exe")], defaultExtension="*.gmr", defaultPath=os.getcwd()):
-    ## Wrapper for tkinter filedialog
-
-    # Create a fake window (replace with real window when GUI is implemented)
-    root = tkinter.Tk()
-    root.withdraw() #use to hide tkinter window
-
-    # Get the file path, starting in the working directory
-    ret = tkinter.filedialog.askopenfilename(parent=root, initialdir=defaultPath, title=promptText, defaultextension=defaultExtension, filetypes=extensions) if fileExists else \
-        tkinter.filedialog.asksaveasfilename(parent=root, initialdir=defaultPath, title=promptText, defaultextension=defaultExtension, filetypes=extensions)
-
-    # Destroy the tkinter window
-    root.destroy()
-
-    return ret
 
 
 def genPatchedExe(exePath, patchedName="__temp_GMR_patched_runner.exe"):
@@ -189,6 +140,7 @@ def genPatchedExe(exePath, patchedName="__temp_GMR_patched_runner.exe"):
     else:
         return exePath
 
+
 def replaceFunction(exeData, sourceFuncName, destFuncName, newExeData, failureMessage):
     ## Replaces one function by overwriting its definition with another function
 
@@ -236,6 +188,155 @@ def replaceFunction(exeData, sourceFuncName, destFuncName, newExeData, failureMe
     exeModified = True
 
     return newExeData
+
+
+class filePromptWithHistory:
+    ## Consists of a label, a combo box, and a browse button. Keeps track of history for the session.
+
+    def __init__(self, frame, rowOffset, columnOffset, promptText, fileExists, extensions, defaultExtension, isFolder, defaultPath = os.getcwd(),\
+                 exeFilePathObj=None, dataWinFilePathObj=None, movieFilePathObj=None, recordPlayObj=None):
+        self.frame = frame
+        pad = GLOBAL_PADDING
+        self.fileExists = fileExists
+
+        self.exeFilePathObj = exeFilePathObj
+        self.dataWinFilePathObj = dataWinFilePathObj
+        self.movieFilePathObj = movieFilePathObj
+        self.recordPlayObj = recordPlayObj
+
+        self.history = []
+        self.isFolder = isFolder
+
+        # Create the label
+        self.label = ttk.Label(frame, text=promptText)
+        self.label.grid(column=0+columnOffset, row=0+rowOffset, sticky="E", padx=pad, pady=pad)
+
+        # Create the combo box
+        self.combobox = ttk.Combobox(frame, values=self.history, width=80)
+        self.combobox.grid(column=1+columnOffset, row=0+rowOffset, padx=pad, pady=pad, sticky="EW", columnspan=2)
+
+        # Create the browse button
+        self.button = ttk.Button(frame, text="Browse...", command=lambda:self.browseFile(promptText, extensions, defaultExtension))
+        self.button.grid(column=3+columnOffset, row=0+rowOffset, padx=pad, pady=pad, sticky="E")
+
+        # Only the combo box should be resizable
+        frame.grid_columnconfigure(0+columnOffset, weight=0)
+        frame.grid_columnconfigure(1+columnOffset, weight=1)
+        frame.grid_columnconfigure(3+columnOffset, weight=0)
+
+    def browseFile(self, promptText, extensions=\
+                   [("All files","*.*"), ("GMReplay files", "*.gmr"), ("Executable files", "*.exe"), ("*.win files", "*.win")],\
+                   defaultExtension="*.gmr", defaultPath=os.getcwd()):
+        ## This searches for a file and adds it to the combo box history
+        filePath = filedialog.askopenfilename(parent=self.frame, initialdir=defaultPath, title=promptText, defaultextension=defaultExtension, filetypes=extensions) if self.fileExists else \
+            filedialog.asksaveasfilename(parent=self.frame, initialdir=defaultPath, title=promptText, defaultextension=defaultExtension, filetypes=extensions)
+        if filePath:
+            self.combobox.set(filePath)
+            self.addToHistory(filePath)
+
+    def addToHistory(self, filePath):
+        ## Add the file path to history if it's not already there, and also run some checks for actions to be completed when a file is selected
+        if filePath not in self.history:
+            self.history.insert(0, filePath)
+            self.combobox["values"] = self.history
+
+            # If the exe was just selected, try to select the data.win by default
+            if self.exeFilePathObj.get() != "" and self.dataWinFilePathObj.get() == "":
+                dataWinDefaultPath = folder(self.exeFilePathObj.get()) + "/data.win"
+                if os.path.isfile(dataWinDefaultPath):
+                    # Don't add this to history because the user did not select it!
+                    self.dataWinFilePathObj.set(dataWinDefaultPath)
+
+            # If all three files have been selected, enable the record/play buttons
+            if self.exeFilePathObj.get() != "" and self.dataWinFilePathObj.get() != "" and self.movieFilePathObj.get() != "":
+                self.recordPlayObj.enable()
+
+
+class recordPlayRadioButtons:
+    ## The record and play radio buttons and the start button.
+
+    def __init__(self, frame, rowOffset, columnOffset, exeFileRow, dataWinFileRow, movieFileRow, recordText, playbackText, startText):
+
+        self.process = None
+        self.exeFileRow = exeFileRow
+        self.dataWinFileRow = dataWinFileRow
+        self.movieFileRow = movieFileRow
+
+        self.recordPlayVar = IntVar(frame, RECORD)
+
+        pad = GLOBAL_PADDING
+
+        self.recordRadioButton = ttk.Radiobutton(frame, text=recordText, value=RECORD, variable=self.recordPlayVar, command=self.radioButtonInteract)
+        self.recordRadioButton.grid(column=0+columnOffset, row=0+rowOffset, padx=pad, pady=pad, sticky="NW")
+
+        self.playRadioButton = ttk.Radiobutton(frame, text=playbackText, value=PLAY, variable=self.recordPlayVar, command=self.radioButtonInteract)
+        self.playRadioButton.grid(column=0+columnOffset, row=1+rowOffset, padx=pad, pady=pad, sticky="NW")
+
+        self.startButton = ttk.Button(frame, text=startText, command=lambda:self.recordOrPlayMovie(self.recordPlayVar.get()))
+        self.startButton.grid(column=0+columnOffset, row=2+rowOffset, padx=pad, pady=pad, sticky="NW")
+
+        # Disable after creating the buttons
+        self.disable()
+
+    def recordOrPlayMovie(self, selection):
+        ## Handles recording (selection is 1 aka RECORD) or playback (selection is 2 aka PLAY)
+
+        # Attempt to patch the exe file
+        pathToExe = genPatchedExe(self.exeFileRow.combobox.get())
+
+        # Run the game with the record command
+        self.process = subprocess.Popen([pathToExe, ("-record" if selection == RECORD else "-playback"), self.movieFileRow.combobox.get(),\
+                        "-game", self.dataWinFileRow.combobox.get(), "-debugoutput", os.getcwd() + "\\debugoutput.log", "|", "cat"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        # Prevent blocking of the game process
+        os.set_blocking(self.process.stdout.fileno(), False)
+
+    def enable(self): # Enable the buttons
+        self.startButton.config(state="enabled")
+
+    def disable(self): # Disable the buttons
+        self.startButton.config(state="disabled")
+
+    def radioButtonInteract(self): # Make it prompt for opening or saving based on the button
+        self.movieFileRow.fileExists = self.recordPlayVar.get() == PLAY
+
+
+def initWindow():
+    ## Creates the base window
+
+    root = Tk()
+    root.title("GMReplay " + VERSION_NUMBER)
+
+    frm = ttk.Frame(root)
+    frm.grid(row=0, column=0, sticky="NSEW")
+
+    root.grid_columnconfigure(0, weight=1)
+
+    # File prompts
+    exeFileRow = filePromptWithHistory(frm, 0, 0, "Game executable:", True, [("Executable files", "*.exe"), ("All files","*.*")], "*.exe", False)
+    dataWinFileRow = filePromptWithHistory(frm, 1, 0, "Game data.win file:", True, [("*.win files", "*.win"), ("All files","*.*")], "*.win", False, defaultPath=exeFileRow.combobox.get())
+    movieFileRow = filePromptWithHistory(frm, 2, 0, "Movie file:", False, [("GMReplay files", "*.gmr"), ("All files","*.*")], "*.gmr", False)
+
+    # Record/play buttons, passing the row objects themselves
+    recordPlayRow = recordPlayRadioButtons(frm, 3, 0, exeFileRow, dataWinFileRow, movieFileRow, "Record", "Playback", "Start")
+
+    # Now that the objects are all created, update each one with links to the others' combo boxes. TODO: find a better way to do this
+    exeFileRow.exeFilePathObj = exeFileRow.combobox
+    exeFileRow.dataWinFilePathObj = dataWinFileRow.combobox
+    exeFileRow.movieFilePathObj = movieFileRow.combobox
+    exeFileRow.recordPlayObj = recordPlayRow
+
+    dataWinFileRow.exeFilePathObj = exeFileRow.combobox
+    dataWinFileRow.dataWinFilePathObj = dataWinFileRow.combobox
+    dataWinFileRow.movieFilePathObj = movieFileRow.combobox
+    dataWinFileRow.recordPlayObj = recordPlayRow
+
+    movieFileRow.exeFilePathObj = exeFileRow.combobox
+    movieFileRow.dataWinFilePathObj = dataWinFileRow.combobox
+    movieFileRow.movieFilePathObj = movieFileRow.combobox
+    movieFileRow.recordPlayObj = recordPlayRow
+
+    return root, exeFileRow, dataWinFileRow, movieFileRow, recordPlayRow
 
 
 if __name__ == '__main__':
