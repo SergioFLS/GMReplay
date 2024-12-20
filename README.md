@@ -44,7 +44,7 @@ GMReplay is currently in development. See the below roadmap for future plans.
 
 ## How to use
 
-Because this is in early development, it may not be feature-complete or user-friendly yet. To run GMReplay, you first need Python (3.10 or higher version).
+Because this is in early development, it may not be feature-complete or user-friendly yet. To run GMReplay, you first need Python (3.12 or higher version).
 
 Then, download and run gmreplay.py. This will open a command-line interface, where you can either start a recording or play back a recording.
 
