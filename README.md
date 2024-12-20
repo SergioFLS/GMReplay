@@ -15,7 +15,7 @@ GMReplay is currently in development. See the below roadmap for future plans.
 - [X] Patch out randomize() for deterministic RNG
 
 **Phase 2 - Piano roll interface (In development)**
-- [ ] Graphical user interface
+- [X] Graphical user interface
 - [ ] Piano roll interface
 - [ ] Custom input file parsing
 
