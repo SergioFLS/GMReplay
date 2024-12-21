@@ -46,7 +46,7 @@ GMReplay is currently in development. See the below roadmap for future plans.
 
 Because this is in early development, it may not be feature-complete or user-friendly yet. To run GMReplay, you first need Python (3.12 or higher version).
 
-Then, download and run gmreplay.py. This will open a command-line interface, where you can either start a recording or play back a recording.
+Then, download the src folder and run gmreplay.py. This will open a command-line interface, where you can either start a recording or play back a recording.
 
 After selecting an option, GMReplay will prompt you to choose the exe file for the game (GameMaker Studio 1 games or later), the data.win (if applicable), and the .gmr replay file.
 
