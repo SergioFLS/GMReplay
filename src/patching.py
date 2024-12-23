@@ -8,8 +8,10 @@ from utils import intToBytes
 import constants as c
 
 
-def genPatchedExe(exePath, patchedName="__temp_GMR_patched_runner.exe"):
+def genPatchedExe(exePath, patchedName=c.PATCH_FILE_NAME): # "__temp_GMR_patched_runner.exe"
     ## Apply patches to the chosen exe and save it into the current working directory. Returns a path to the patched exe.
+
+    print(c.PATCH_START_STRING) # "Patching mouse inputs..."
 
     exeModified = False
 
@@ -40,7 +42,7 @@ def genPatchedExe(exePath, patchedName="__temp_GMR_patched_runner.exe"):
                 mouseOffsets += [match_obj.start()]
 
     if len(mouseOffsets) != 2: # if it's still not 2 after we ran the second check
-        print("WARNING: Patching encountered an issue. Mouse inputs will not work.")
+        print(c.PATCH_MOUSE_FAIL_STRING) # "WARNING: Patching encountered an issue. Mouse inputs will not work."
 
     else: # Keep going if there is no issue, otherwise skip ahead to the next patch
         # If there are exactly two matches, we have g_MouseX and g_MouseY offsets and values
@@ -74,19 +76,23 @@ def genPatchedExe(exePath, patchedName="__temp_GMR_patched_runner.exe"):
         newExeData[g_MouseY_offsets[0]:g_MouseY_offsets[0] + 4] = g_MousePosY
         newExeData[g_MouseY_offsets[1]:g_MouseY_offsets[1] + 4] = g_MousePosY
         exeModified = True
+        print(c.PATCH_MOUSE_SUCCESS_STRING) # "Mouse inputs patched successfully."
 
+    print(c.PATCH_KEYDIRECT_STRING) # "Patching keyboard_check_direct()..."
 
     # Patch keyboard_check_direct next
-    newExeData = replaceFunction(exeData, "keyboard_check", "keyboard_check_direct", newExeData,\
-                                 "WARNING: Patching encountered an issue. Direct keyboard input will not work.")
+    newExeData = replaceFunction(exeData, "keyboard_check", "keyboard_check_direct", newExeData, c.PATCH_KEYDIRECT_FAIL_STRING, c.PATCH_KEYDIRECT_SUCCESS_STRING)
+                                 # "WARNING: Patching encountered an issue. Direct keyboard input will not work.", "keyboard_check_direct() patched successfully."
 
+    print(c.PATCH_RANDOMIZE_STRING) # "Patching randomize()..."
 
     # Patch randomize
-    newExeData = replaceFunction(exeData, "random_get_seed", "randomize", newExeData,\
-                                 "WARNING: Patching encountered an issue. Randomness will not be deterministic.")
+    newExeData = replaceFunction(exeData, "random_get_seed", "randomize", newExeData, c.PATCH_RANDOMIZE_FAIL_STRING, c.PATCH_RANDOMIZE_SUCCESS_STRING)
+                                 # "WARNING: Patching encountered an issue. Randomness will not be deterministic.", "randomize() patched successfully."
 
 
     # Done with the patched exe, now write it to the working directory
+    print(c.PATCH_SUCCESS_STRING) # "Runner patched successfully."
     if exeModified == True:
         with open(patchedName, 'wb') as fid:
             fid.write(newExeData)
@@ -96,7 +102,7 @@ def genPatchedExe(exePath, patchedName="__temp_GMR_patched_runner.exe"):
         return exePath
 
 
-def replaceFunction(exeData, sourceFuncName, destFuncName, newExeData, failureMessage):
+def replaceFunction(exeData, sourceFuncName, destFuncName, newExeData, failureMessage, successMessage):
     ## Replaces one function by overwriting its definition with another function
 
     global exeModified # for indicating to the calling function whether the patch was successful
@@ -142,4 +148,5 @@ def replaceFunction(exeData, sourceFuncName, destFuncName, newExeData, failureMe
     newExeData[destFuncDefOffset-4:destFuncDefOffset] = sourceFunction
     exeModified = True
 
+    print(successMessage)
     return newExeData
