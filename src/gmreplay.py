@@ -10,11 +10,11 @@ import constants as c
 
 def main():
     # Init
-    print("GMReplay " + c.VERSION_NUMBER + " by OceanBagel\n")
+    print(c.STARTUP_STRING) # "GMReplay " + VERSION_NUMBER + " by OceanBagel\n"
 
     # Enforce a minimum Python version
     if sys.version_info < c.MIN_PYTHON:
-        print("Python %s.%s or later is required.\n" % c.MIN_PYTHON)
+        print(c.MIN_PYTHON_STRING) # "Python %s.%s or later is required.\n" % MIN_PYTHON
         return
 
     # Initialize tkinter window
@@ -31,6 +31,7 @@ def main():
                 print(line.decode('utf-8').strip())
 
             if mainWindowObj.gameProcess.poll() != None: # If it is not none, the game was closed
+                print(c.GAME_CLOSED_STRING)
                 mainWindowObj.gameProcess = None # Clear the variable until it's used again
                 mainWindowObj.recordPlayRow.movieEnd() # Enable buttons
 
