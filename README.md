@@ -17,7 +17,7 @@ GMReplay is currently in development. See the below roadmap for future plans.
 **Phase 2 - Piano roll interface (In development)**
 - [X] Graphical user interface
 - [ ] Piano roll interface
-- [ ] Custom input file parsing
+- [X] Replay file parsing
 
 **Phase 3 - Function hooking (Not started)**
 - [ ] randomize hooking
