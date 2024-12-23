@@ -1,6 +1,8 @@
 # GMReplay
 ## A program for creating tool-assisted replays of Windows-based GameMaker games from GameMaker: Studio 1 or later.
 
+![image](https://github.com/user-attachments/assets/d892d4c1-6ba0-47af-97ed-031ef1e96836)
+
 GMReplay is a program for creating tool-assisted replays of Windows GameMaker games, intended for games that cannot be run on Linux. For GameMaker games that have native Linux versions or VM GameMaker games that can be ported to Linux, check out [libTAS](https://github.com/clementgallet/libTAS).
 
 GMReplay relies on the built-in playback and recording features present in GameMaker games for frame-accurate input playback regardless of the Windows timing inaccuracies that otherwise cause difficulty with building conventional TAS tools for Windows games.
