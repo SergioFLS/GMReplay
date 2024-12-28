@@ -17,7 +17,7 @@ FRAMES_PER_PAGE = 1000
 # Strings
 
 # Main program strings
-VERSION_NUMBER = "v0.1.2"
+VERSION_NUMBER = "v0.1.3"
 STARTUP_STRING = "GMReplay " + VERSION_NUMBER + " by OceanBagel\n"
 MIN_PYTHON_STRING = "Python %s.%s or later is required.\n" % MIN_PYTHON
 
@@ -47,7 +47,7 @@ STOP_STRING = "Stop"
 GAME_START_STRING = "Starting the game..."
 GAME_STOP_STRING = "Stopping the game..."
 GAME_CLOSED_STRING = "Game was closed."
-DEFAULT_COLUMNS_LIST = ["Frame", "lastChar", "inputString", "lastKey", "currentKey", "keyDown", "keyReleased", "keyPressed",\
+DEFAULT_COLUMNS_LIST = ["lastChar", "inputString", "lastKey", "currentKey", "keyDown", "keyReleased", "keyPressed",\
                        "lastButton", "currentButton", "buttonDown", "buttonReleased", "buttonPressed",\
                        "wheelUp", "wheelDown", "mousePos", "mouseX", "mouseY"]
 LOADING_MOVIE_STRING = "Loading movie data..."

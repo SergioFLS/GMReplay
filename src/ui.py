@@ -1,10 +1,11 @@
 # Outside packages
 import subprocess
 import os
-from tkinter import Tk, ttk, filedialog, IntVar, Canvas
+from tkinter import Tk, ttk, filedialog, IntVar
+from tksheet import Sheet
 
 # Local packages
-from utils import folder, trimOrPadList
+from utils import folder
 from patching import genPatchedExe
 from movieparsing import loadMovie, getColumnsList
 
@@ -176,17 +177,8 @@ class mainWindowClass:
         self.mainWindowFrame = ttk.Frame(self.root)
         self.mainWindowFrame.grid(row=0, column=0, sticky="NSEW")
 
+        self.root.grid_rowconfigure(4, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
-
-        # Create the input window
-        self.inputWindowFrame = ttk.Frame(self.root)
-        self.inputWindowFrame.grid(row=4, column=0, sticky="NSW")  # Add E to allow resizing columns (unsupported for now)
-
-        self.inputGridObj = inputGridClass(self.inputWindowFrame, 0, 0, self.columnsList, self)
-
-        # Configure columns to resize as necessary
-        for i in range(len(self.columnsList)):
-            self.inputWindowFrame.grid_columnconfigure(i, weight=1)
 
         # File prompts
         self.exeFileRow = filePromptWithHistory(self.mainWindowFrame, 0, 0, c.EXE_FILE_PROMPT, True, [("Executable files", "*.exe"), ("All files","*.*")], "*.exe", False, self)
@@ -197,8 +189,14 @@ class mainWindowClass:
         self.recordPlayRow = recordPlayRadioButtons(self.mainWindowFrame, 3, 0, c.RECORDING_STRING, c.PLAYBACK_STRING, c.START_STRING, c.STOP_STRING, self)
 
         # Debug button
-        # self.debugButton = ttk.Button(self.mainWindowFrame, text="Test", command=lambda:print("Insert function here."))
+        # self.debugButton = ttk.Button(self.mainWindowFrame, text="Test", command=lambda:self.loadMovieInputs("C:\\Users\\OceanBagel\\Documents\\_Projects\\GMReplay\\kz_new.gmr"))
         # self.debugButton.grid(column=4, row=3, padx=c.GLOBAL_PADDING, pady=c.GLOBAL_PADDING)
+
+        # Create the input window
+        self.inputWindowFrame = ttk.Frame(self.root)
+        self.inputWindowFrame.grid(row=4, column=0, sticky="NSEW")
+
+        self.inputGridObj = inputSheetClass(self.inputWindowFrame, 0, 0, self.columnsList, self)
 
     def areAllFilesSelected(self):
         return self.exeFileRow.combobox.get() != "" and self.dataWinFileRow.combobox.get() != "" and self.movieFileRow.combobox.get() != ""
@@ -210,67 +208,33 @@ class mainWindowClass:
         return self.inputGridObj.loadMovieInputs(movieFilePath)
 
 
-class inputGridClass:
-    ## A class for the input grid
-
-    def __init__(self, inputWindowFrame, rowOffset, columnOffset, columnsList, mainWindowObj, loadedMovieData=[]):
+class inputSheetClass:
+    ## A class for using Tksheet for the input display
+    def __init__(self, inputWindowFrame, rowOffset, columnOffset, columnLabelList, mainWindowObj, loadedMovieData=[]):
         self.mainWindowObj = mainWindowObj
         self.inputWindowFrame = inputWindowFrame
+        self.rowOffset = rowOffset
+        self.columnOffset = columnOffset
 
-        # Label row, the top row indicating the name of each column.
-        self.labelRow = labelRowClass(inputWindowFrame, rowOffset, columnOffset, columnsList)
+        # Initialize the sheet object with the column labels
+        self.sheet = Sheet(self.inputWindowFrame, headers=columnLabelList, data=self.stringify(loadedMovieData))
+        self.sheet.enable_bindings()
+        self.sheet.pack(side="top", fill="both", expand=True)
 
-        # Get widths of all the labels in pixels
-        self.mainWindowObj.root.update_idletasks() # Update the window to render the labels, required to measure widths
-        self.widthsList = []
-        for i in range(len(self.labelRow.labelsList)):
-            self.widthsList += [self.labelRow.labelsList[i].winfo_width()]
-
-        # Add a label in the label row to leave space for the scrollbar
-        self.placeholderScrollbar = ttk.Label(inputWindowFrame, width=2)
-        self.placeholderScrollbar.grid(row=0, column=len(columnsList))
-
-        # Create a frame within which the input rows will be
-        self.inputRowFrame = ttk.Frame(self.inputWindowFrame)
-        self.inputRowFrame.grid(row=rowOffset+1, column=columnOffset, sticky="NSEW", columnspan=len(columnsList) + 1)
-
-        # Canvas representing the scrollable area
-        self.inputRowCanvas = Canvas(self.inputRowFrame)
-        self.inputRowCanvas.grid(row=0, column=0, sticky="nw")
-        self.inputRowCanvas.configure(scrollregion=[0, 0, 0, 0], height=c.INPUT_SCROLLABLE_AREA_HEIGHT)
-
-        # Create a vertical scrollbar on the canvas
-        self.inputScrollbar = ttk.Scrollbar(self.inputRowFrame, orient="vertical", command=self.inputRowCanvas.yview)
-        self.inputScrollbar.grid(row=0, column=1, sticky="NS")
-        self.inputScrollbar.grid_rowconfigure(0, weight=1)
-        self.inputRowCanvas.configure(yscrollcommand=self.inputScrollbar.set)
-
-        # Inner frame contained within the canvas
-        self.inputRowInnerFrame = ttk.Frame(self.inputRowFrame)
-        self.inputRowInnerFrame.grid(row=0, column=0, sticky="NSEW")
-
-        # Canvas contained within the inner frame, where the inputs will actually be drawn
-        self.inputRowInnerCanvas = Canvas(self.inputRowInnerFrame, width=c.INPUT_CANVAS_WIDTH, height=c.INPUT_CANVAS_HEIGHT)
-        self.inputRowInnerCanvas.pack(fill = "both", expand = True)
-
-        # Create the input rows using loaded movie data if present
-        self.inputRows = inputRowsClass(self.inputRowInnerCanvas, 0, 0, loadedMovieData, self.widthsList)
-
-        self.inputRowCanvasID = self.inputRowCanvas.create_window((0, 0), window=self.inputRowInnerFrame, anchor="nw")
-
-        # Grid configure. TODO: Remove the unnecessary ones.
-        self.inputWindowFrame.grid_rowconfigure(rowOffset+1, weight=1)
-        self.inputWindowFrame.grid_columnconfigure(columnOffset, weight=1)
-        self.inputRowFrame.grid_rowconfigure(0, weight=1)
-        self.inputRowFrame.grid_columnconfigure(0, weight=1)
-        self.inputRowInnerFrame.grid_rowconfigure(0, weight=1)
-        self.inputRowInnerFrame.grid_columnconfigure(0, weight=1)
+    def stringify(self, twoDimList):
+        stringified2dList = []
+        for row in twoDimList:
+            thisRow = []
+            for element in row:
+                thisRow += [str(element)]
+            stringified2dList += [thisRow]
+        return stringified2dList
 
     def updateInputGrid(self, loadedMovieData):
-        self.inputRows.updateInputGrid(loadedMovieData)
+        self.sheet.set_sheet_data(self.stringify(loadedMovieData))
 
     def updateColumnLabels(self, columnsList):
-        self.labelRow.updateLabelText(columnsList)
+        self.sheet.set_header_data(columnsList, range(len(columnsList)))
 
     def loadMovieInputs(self, movieFilePath=None):
         # If a movie file path wasn't given, use the previous one
@@ -288,111 +252,9 @@ class inputGridClass:
             print(c.UPDATE_INPUT_EDITOR_STRING)
             self.updateInputGrid(self.loadedMovieData)
             self.updateColumnLabels(self.columnsList)
-            self.inputRowCanvas.configure(scrollregion=[0, 0, 0, c.DEFAULT_ROW_HEIGHT * min(len(self.loadedMovieData), c.FRAMES_PER_PAGE)])
 
             # Update the main window and then print the completion message
             self.mainWindowObj.root.update_idletasks()
             self.mainWindowObj.root.update()
 
             print(c.MOVIE_LOADED_STRING)
-
-
-class labelRowClass:
-    ## The row of labels at the top of the input column
-
-    def __init__(self, frame, rowOffset, columnOffset, labelTextList, reliefType=c.LABEL_RELIEF_TYPE):
-        self.frame = frame
-        self.rowOffset = rowOffset
-        self.columnOffset = columnOffset
-        self.labelTextList = labelTextList
-
-        self.columnWidths = c.DEFAULT_COLUMN_WIDTHS
-        self.borderWidth = c.INPUT_BORDER_WIDTH
-        self.reliefType = reliefType
-        pad = 0
-
-        # Iterate over the columns
-        self.labelsList = []
-
-        for i in range(len(self.labelTextList)):
-
-            self.labelsList += [ttk.Label(self.frame, text=self.labelTextList[i], width=self.columnWidths[i],\
-                                          borderwidth = self.borderWidth, relief=self.reliefType, anchor="center")]
-            self.labelsList[i].grid(column=columnOffset + i, row=rowOffset, padx=pad, pady=pad, sticky="EW")
-
-    def updateLabelText(self, labelTextList):
-        for i in range(len(self.labelsList)):
-            self.labelsList[i].config(text = labelTextList[i])
-
-
-class inputRowsClass:
-    ## The row of scrollable inputs
-
-    def __init__(self, inputRowCanvas, rowOffset, columnOffset, loadedMovieData, widthsList=c.DEFAULT_COLUMN_WIDTHS):
-        self.inputRowCanvas = inputRowCanvas
-        self.rowOffset = rowOffset
-        self.columnOffset = columnOffset
-        self.widthsList = widthsList
-        self.inputGridRows = []
-        self.borderWidth = c.INPUT_BORDER_WIDTH
-
-    def updateInputGrid(self, loadedMovieData):
-        previousLength = len(self.inputGridRows)
-
-        # Remove the frames that should no longer be shown
-        if previousLength > len(loadedMovieData):
-            for i in range(len(loadedMovieData), previousLength):
-                self.inputGridRows[i].delete()
-
-        # Trim or pad the input grid rows to the proper length
-        self.inputGridRows = trimOrPadList(self.inputGridRows, len(loadedMovieData))
-
-        # Iterate over each frame of the movie, edit any rows that already exist
-        # TODO: Improve performance here. Multiprocessing is possible because each row is independent of the others.
-        for frameIndex in range(min(len(loadedMovieData), c.FRAMES_PER_PAGE)): # We can only store up to 1000 frames in the canvas right now. TODO: Expand this.
-            if self.inputGridRows[frameIndex] != None: # If this row was already created
-                self.inputGridRows[frameIndex].updateLabelText(([frameIndex] + loadedMovieData[frameIndex]))
-            else: # otherwise, create new labels
-                self.inputGridRows[frameIndex] = canvasTextboxRow(self.inputRowCanvas, self.rowOffset + frameIndex, self.columnOffset,\
-                                                          [frameIndex] + loadedMovieData[frameIndex], self.widthsList)
-
-
-class canvasTextboxRow:
-    ## This creates a row of textboxes on the canvas
-
-    def __init__(self, canvas, rowOffset, columnOffset, labelTextList, columnWidthList = c.DEFAULT_COLUMN_WIDTHS):
-        self.canvas = canvas
-        self.rowOffset = rowOffset
-        self.columnOffset = columnOffset
-        self.labelTextList = labelTextList
-        self.columnWidthList = columnWidthList
-        self.rowHeight = c.DEFAULT_ROW_HEIGHT
-        self.textItems = []
-        self.borderItems = []
-
-        # Create text
-        self.createText(columnWidthList, labelTextList)
-
-    def createText(self, columnWidthList, labelTextList):
-        currentOrigin = 0
-        widthRatio = 1 # Hardcoded for now, the ratio between the column widths (in characters) and rectangle widths (in pixels)
-        self.borderItems = trimOrPadList(self.borderItems, len(columnWidthList))
-        self.textItems = trimOrPadList(self.textItems, len(labelTextList))
-        bg_color = self.canvas.cget("background")
-        for i in range(len(labelTextList)):
-            self.borderItems[i] = self.canvas.create_rectangle(currentOrigin, self.rowOffset * self.rowHeight,\
-                                         currentOrigin + (columnWidthList[i] * widthRatio), self.rowHeight + (self.rowOffset * self.rowHeight),\
-                                         fill=bg_color, outline="black", width=2)
-            self.textItems[i] = self.canvas.create_text(currentOrigin + 5, self.rowOffset * self.rowHeight, text=labelTextList[i], anchor="nw")
-            currentOrigin = currentOrigin + (columnWidthList[i] * widthRatio)
-
-    def updateLabelText(self, labelTextList):
-        for i in range(len(self.textItems)):
-            self.canvas.itemconfig(self.textItems[i], text=labelTextList[i])
-
-    def delete(self):
-        # Delete all elements in the row
-        for element in self.borderItems:
-            self.canvas.delete(element)
-        for element in self.textItems:
-            self.canvas.delete(element)
