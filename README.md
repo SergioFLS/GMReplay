@@ -47,15 +47,37 @@ GMReplay is currently in development. See the below roadmap for future plans.
 
 ## How to use
 
-Because this is in early development, it may not be feature-complete or user-friendly yet. To run GMReplay, you first need Python (3.12 or higher version).
+Because this is in early development, it may not be feature-complete or user-friendly yet.
 
-Then, download the src folder and run gmreplay.py. This will open a command-line interface, where you can either start a recording or play back a recording.
+GMReplay currently does not have a release version. Once released, GMReplay will be available as a standalone .exe file. The first release is planned for the end of Phase 2 development (see Roadmap above).
 
-After selecting an option, GMReplay will prompt you to choose the exe file for the game (GameMaker Studio 1 games or later), the data.win (if applicable), and the .gmr replay file.
+To run GMReplay in your own Python environment, you first need to install Python 3.12 or higher.
+
+GMReplay currently uses the following built-in Python packages:
+- sys
+- os
+- re
+- functools
+- pickle
+- subprocess
+- tkinter
+
+GMReplay also requires the following package, installable through pip:
+- tksheet
+
+Once you have Python and the required packages installed, download the src folder and run gmreplay.py. This will open GMReplay's graphical user interface (GUI), as well as a console where status notifications will be printed.
+
+In the GUI, GMReplay will prompt you to choose the exe file for the game (GameMaker Studio 1 games or later), the data.win (if applicable), and the .gmr replay file.
 
 Once your selections have been made, GMReplay will attempt to create a patched version of the exe file. This is stored separately from the exe file you selected. The patch enables mouse inputs, fixes an issue with certain keyboard functions, and forces deterministic RNG.
 
-After the patching process, the game will open and recording or playback will begin. There are currently no speed controls, so the recordings are all done in realtime.
+You can select either Recording or Playback, and then press Start to open the game in either recording or playback mode. There are currently no speed controls, so the recordings are all done in realtime.
+
+The .gmr file automatically saves while the game's running in recording mode. To end recording, close the game or press the "Stop" button.
+
+Once the .gmr movie file contains inputs, the inputs will be displayed in the GUI. You can select between Input or Raw viewing modes, where Input is a simplified view of the keys that were actually pressed during the movie and Raw is the full view of everything contained within the .gmr file.
+
+Note that the input display is currently read-only. Any modifications you make will not be applied to the .gmr movie file. You can press the "Input" or "Raw" buttons to reload the input display and revert any changes.
 
 ## Issues
 
