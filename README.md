@@ -58,7 +58,7 @@ GMReplay currently uses the following built-in Python packages:
 - os
 - re
 - functools
-- pickle
+- itertools
 - subprocess
 - tkinter
 
@@ -75,7 +75,7 @@ You can select either Recording or Playback, and then press Start to open the ga
 
 The .gmr file automatically saves while the game's running in recording mode. To end recording, close the game or press the "Stop" button.
 
-Once the .gmr movie file contains inputs, the inputs will be displayed in the GUI. You can select between Input or Raw viewing modes, where Input is a simplified view of the keys that were actually pressed during the movie and Raw is the full view of everything contained within the .gmr file.
+Once the .gmr movie file contains inputs, the inputs will be displayed in the GUI. You can select between Input or Raw viewing modes, where Input is a simplified view of the keys that were actually pressed during the movie and Raw is the full view of everything contained within the .gmr file. There is also an "abridged" version of the Raw view, where empty columns are hidden.
 
 Note that the input display is currently read-only. Any modifications you make will not be applied to the .gmr movie file. You can press the "Input" or "Raw" buttons to reload the input display and revert any changes.
 
