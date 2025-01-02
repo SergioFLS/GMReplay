@@ -16,11 +16,11 @@ GMReplay is currently in development. See the below roadmap for future plans.
 - [X] Support for keyboard_check_direct and mouse inputs
 - [X] Patch out randomize() for deterministic RNG
 
-**Phase 2 - Piano roll interface (In development)**
+**Phase 2 - Piano roll interface (In testing)**
 - [X] Graphical user interface
-- [ ] Piano roll interface for reading/writing inputs
+- [X] Piano roll interface for reading/writing inputs
 - [X] Replay file parsing
-- [ ] Replay file writing/modification
+- [X] Replay file writing/modification
 
 **Phase 3 - Function hooking (Not started)**
 - [ ] randomize hooking
@@ -61,6 +61,7 @@ GMReplay currently uses the following built-in Python packages:
 - itertools
 - subprocess
 - tkinter
+- webbrowser
 
 GMReplay also requires the following package, installable through pip:
 - tksheet
