@@ -21,7 +21,7 @@ def main():
     mainWindowObj = mainWindowClass()
 
     # Execute main loop, broken apart to process stdout from the game window
-    while True:
+    while mainWindowObj.windowExists:
         mainWindowObj.root.update_idletasks()
         mainWindowObj.root.update()
 
