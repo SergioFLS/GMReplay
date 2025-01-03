@@ -90,7 +90,7 @@ class mainWindowClass:
 
         pad = c.GLOBAL_PADDING
 
-        self.iconImage = PhotoImage(file="../img/gmreplay_logo.gif")
+        self.iconImage = PhotoImage(file="img/gmreplay_logo.gif")
         iconLabel = Label(aboutWindowRoot, image=self.iconImage)
         iconLabel.pack(side="top", fill="none", expand=False, padx=pad, pady=pad)
 
@@ -647,4 +647,4 @@ class inputSheetClass:
             return None
 
 def addIcon(root):
-    root.iconbitmap(os.getcwd() + "/../img/gmreplay_logo.ico")
+    root.iconbitmap("img/gmreplay_logo.ico")

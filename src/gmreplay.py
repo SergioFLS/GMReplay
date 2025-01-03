@@ -1,7 +1,7 @@
 # Outside packages
 import sys
 from traceback import format_exc
-from os import system
+from os import system, chdir
 
 # Local packages
 from ui import mainWindowClass
@@ -13,6 +13,12 @@ import constants as c
 def main():
     # Init
     print(c.STARTUP_STRING) # "GMReplay " + VERSION_NUMBER + " by OceanBagel\n"
+
+    # Change the working directory to the temp directory (only applies to the release version, distributed as a packed exe)
+    try:
+        chdir(sys._MEIPASS)
+    except AttributeError: # If this doesn't exist, we're not running the release and so we can continue
+        pass
 
     # Enforce a minimum Python version
     if sys.version_info < c.MIN_PYTHON:
