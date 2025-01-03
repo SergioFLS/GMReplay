@@ -6,7 +6,7 @@ PLAY = 2
 # Strings
 
 # Main program strings
-VERSION_NUMBER = "v0.1.4"
+VERSION_NUMBER = "v0.1.5"
 STARTUP_STRING = "GMReplay " + VERSION_NUMBER + " by OceanBagel\n"
 MIN_PYTHON_STRING = "Python %s.%s or later is required.\n" % MIN_PYTHON
 LICENSE_HEADER = "Copyright (C) 2024 OceanBagel\n\n"+\
@@ -61,8 +61,13 @@ SAVED_MOVIE_STRING = "Movie file saved."
 SAVE_OPTION_STRING = "Save movie file"
 SAVE_AS_OPTION_STRING = "Save movie file as..."
 ABOUT_MESSAGE = "GMReplay is a program for creating tool-assisted replays of Windows-based GameMaker games from GameMaker: Studio 1 or later.\n\n"+\
-"To submit an issue, receive the most up-to-date versions, or contribute to the development of GMReplay, visit the Github repo at:"
+"To submit an issue, receive the most up-to-date versions, or contribute to the development of GMReplay, visit the Github repository at:"
 ABOUT_LINK = "https://github.com/OceanBagel/GMReplay/"
+SELECT_COLUMNS_TITLE_STRING = "Select columns to add"
+SELECT_COLUMNS_STRING = "Select columns to add:"
+INSERT_COLUMN_TEXT = "Insert columns"
+ADDING_COLUMNS_STRING = "Adding columns "
+OK_STRING = "Ok"
 
 
 # Movie parsing strings

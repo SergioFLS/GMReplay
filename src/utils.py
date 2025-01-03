@@ -24,8 +24,8 @@ def intToBytes(integer):
 
 
 def rotate2DArray(array):
-    ## Rotates the 2d array, e.g. [[1, 2], [3, 4]] -> [(1, 3), (2, 4)]
-    return list(zip(*array[::]))
+    ## Rotates the 2d array, e.g. [[1, 2], [3, 4]] -> [[1, 3], [2, 4]]
+    return list(list(thisTuple) for thisTuple in zip(*array[::]))
 
 
 def reduceBitwiseOr(array):
@@ -55,6 +55,10 @@ def listIndicesThatAreTrue(array):
 def keyName(keycode):
     ## Returns the name corresponding to a given key code, or the keycode itself if the key is not present in the dict
     return c.VK_NAMES.get(keycode, keycode)
+
+
+def keyCodes(keyName):
+    return next(key for key, value in c.VK_NAMES.items() if value == keyName)
 
 
 def stringify(twoDimList):

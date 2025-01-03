@@ -305,7 +305,6 @@ def inputsToRecording(inputColumnsList, keyCodesList, inputFormatMovieData):
         # (This would normally use capslock/shift to include the correct keys, as well as system-dependent key repetition and allows multiple of the same key in one frame)
         # (Basically, it's impossible to recreate based on inputs alone, so we do our best and rely on the user manually adding the correct string if required)
         # TODO: Allow the user to manually add the correct string.
-        # This comment is only here so i can meow at the people reading this. also follow t.tv/rayzoroark  -Lillie
         for key in keyDown:
             if key > 0 and key in c.KEYS_THAT_PRINT.keys():
                 inputString += c.KEYS_THAT_PRINT[key]
