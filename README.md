@@ -45,11 +45,15 @@ GMReplay is currently in development. See the below roadmap for future plans.
 - [ ] System time modification
 - [ ] On-screen display of inputs, frames, etc.
 
-## How to use
+## How to install
 
-Because this is in early development, it may not be feature-complete or user-friendly yet.
+There are a couple different ways to install GMReplay.
 
-GMReplay currently does not have a release version. Once released, GMReplay will be available as a standalone .exe file. The first release is planned for the end of Phase 2 development (see Roadmap above).
+### Release version (recommended)
+
+The latest release is the recommended way to run GMReplay. From the Github page, click on "Releases" on the right, find the latest version, and download "GMReplay.exe". There is no additional installation process, so you can run GMReplay.exe directly to use GMReplay.
+
+### Python environment
 
 To run GMReplay in your own Python environment, you first need to install Python 3.12 or higher.
 
@@ -68,6 +72,10 @@ GMReplay also requires the following package, installable through pip:
 
 Once you have Python and the required packages installed, download the src folder and run gmreplay.py. This will open GMReplay's graphical user interface (GUI), as well as a console where status notifications will be printed.
 
+## How to use
+
+Because this is in early development, it may not be feature-complete or user-friendly yet.
+
 In the GUI, GMReplay will prompt you to choose the exe file for the game (GameMaker Studio 1 games or later), the data.win (if applicable), and the .gmr replay file.
 
 Once your selections have been made, GMReplay will attempt to create a patched version of the exe file. This is stored separately from the exe file you selected. The patch enables mouse inputs, fixes an issue with certain keyboard functions, and forces deterministic RNG.
@@ -76,9 +84,9 @@ You can select either Recording or Playback, and then press Start to open the ga
 
 The .gmr file automatically saves while the game's running in recording mode. To end recording, close the game or press the "Stop" button.
 
-Once the .gmr movie file contains inputs, the inputs will be displayed in the GUI. You can select between Input or Raw viewing modes, where Input is a simplified view of the keys that were actually pressed during the movie and Raw is the full view of everything contained within the .gmr file. There is also an "abridged" version of the Raw view, where empty columns are hidden.
+Once the .gmr movie file contains inputs, the inputs will be displayed in the GUI. From there, you can make edits by clicking individual cells, clicking and dragging to paint cells, or shift-clicking to paint a region of cells. You can add or delete rows by right clicking the row labels, and you can add columns by right clicking the column labels.
 
-Note that the input display is currently read-only. Any modifications you make will not be applied to the .gmr movie file. You can press the "Input" or "Raw" buttons to reload the input display and revert any changes.
+The movie file is saved automatically when you start playback. To save manually, go to "File" and then either "Save movie" or "Save movie as...".
 
 ## Issues
 
