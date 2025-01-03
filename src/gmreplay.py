@@ -1,5 +1,7 @@
 # Outside packages
 import sys
+from traceback import format_exc
+from os import system
 
 # Local packages
 from ui import mainWindowClass
@@ -37,4 +39,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except: # If there was an exception, leave the console open and await user input
+        print(format_exc())
+    finally:
+        system("pause")

@@ -1,12 +1,12 @@
 # Outside packages
 import subprocess
 import os
-from tkinter import Tk, ttk, filedialog, IntVar, StringVar, Menu, Toplevel, Label
+from tkinter import Tk, ttk, filedialog, IntVar, StringVar, Menu, Toplevel, Label, PhotoImage
 from tksheet import Sheet
 from itertools import compress
 
 # Local packages
-from utils import folder, stringify, rotate2DArray, reduceBitwiseOr, openURL
+from utils import folder, stringify, rotate2DArray, reduceBitwiseOr, openURL, keyName, keyCodes
 from patching import genPatchedExe
 from movieparsing import loadMovie, recordingToInputs, inputsToRecording, saveMovie
 
@@ -24,6 +24,7 @@ class mainWindowClass:
         self.root = Tk()
         self.root.title(c.WINDOW_TITLE)
         self.root.protocol("WM_DELETE_WINDOW", self.onClose)
+        addIcon(self.root)
 
         self.mainWindowFrame = ttk.Frame(self.root)
         self.mainWindowFrame.grid(row=0, column=0, sticky="NSEW")
@@ -83,21 +84,27 @@ class mainWindowClass:
     def aboutWindow(self):
         aboutWindowRoot = Toplevel(self.root)
         aboutWindowRoot.title("About GMReplay")
-        aboutWindowRoot.geometry("700x400")
+        aboutWindowRoot.geometry("730x417")
+        addIcon(aboutWindowRoot)
+        width = 730
 
         pad = c.GLOBAL_PADDING
 
-        headerLabel = Label(aboutWindowRoot, text=c.STARTUP_STRING, wraplength=700-(pad*2), anchor="w", justify="center")
+        self.iconImage = PhotoImage(file="../img/gmreplay_logo.gif")
+        iconLabel = Label(aboutWindowRoot, image=self.iconImage)
+        iconLabel.pack(side="top", fill="none", expand=False, padx=pad, pady=pad)
+
+        headerLabel = Label(aboutWindowRoot, text=c.STARTUP_STRING, wraplength=width-(pad*2), anchor="w", justify="center")
         headerLabel.pack(side="top", fill="none", expand=False, padx=pad, pady=pad)
 
-        firstLabel = Label(aboutWindowRoot, text=c.ABOUT_MESSAGE, wraplength=700-(pad*2), anchor="w", justify="left")
+        firstLabel = Label(aboutWindowRoot, text=c.ABOUT_MESSAGE, wraplength=width-(pad*2), anchor="w", justify="left")
         firstLabel.pack(side="top", fill="both", expand=True, padx=pad, pady=pad)
 
         firstLabelHyperlink = Label(aboutWindowRoot, text=c.ABOUT_LINK, cursor="hand2", foreground="blue", anchor="w", justify="center")
         firstLabelHyperlink.pack(side="top", fill="none", expand=False, padx=pad, pady=pad)
         firstLabelHyperlink.bind("<Button-1>", lambda e:openURL(c.ABOUT_LINK))
 
-        secondLabel = Label(aboutWindowRoot, text=c.LICENSE_HEADER, wraplength=700-(pad*2), anchor="w", justify="left")
+        secondLabel = Label(aboutWindowRoot, text=c.LICENSE_HEADER, wraplength=width-(pad*2), anchor="w", justify="left")
         secondLabel.pack(side="top", fill="both", expand=True, padx=pad, pady=pad)
 
         secondLabelHyperlink = Label(aboutWindowRoot, text=c.LICENSE_LINK, cursor="hand2", foreground="blue", anchor="w", justify="center")
@@ -304,6 +311,7 @@ class inputSheetClass:
         self.rowOffset = rowOffset
         self.columnOffset = columnOffset
         self.inputFormatMovieData = []
+        self.keyCodesList = []
         self.loadedMovieData = loadedMovieData
         self.inputColumnsList = c.DEFAULT_COLUMNS_LIST
         self.rawColumnsList = c.DEFAULT_COLUMNS_LIST_RAW
@@ -325,7 +333,9 @@ class inputSheetClass:
         self.sheet.extra_bindings("end_edit_cell", self.onEndEditCell)
         self.sheet.extra_bindings(("end_insert_row", "end_delete_rows"), self.onBigSheetUpdate)
         self.sheet.edit_validation(self.validateNumericInput)
-        # TODO: Add bindings to create new columns (with a menu to select what to add)
+        self.sheet.extra_bindings("begin_add_column", self.columnSelection)
+        # Add a menu to the column headers and redirect it to our column selection command
+        self.sheet.MT.menu_add_command(self.sheet.CH.ch_rc_popup_menu, label=c.INSERT_COLUMN_TEXT, command=self.columnSelection)
 
         self.sheet.pack(side="top", fill="both", expand=True, padx=pad, pady=pad)
 
@@ -443,6 +453,90 @@ class inputSheetClass:
             # Not implemented
             pass
 
+    def columnSelection(self):
+        ## Open a window prompting selection of which columns to show
+        if self.displayType != c.INPUTS_STRING:
+            return None # This operation only applies to input display mode
+
+        pad = c.GLOBAL_PADDING
+        maxElementsPerRow = 10
+
+        # Make a new window
+        self.columnSelectionWindowRoot = Toplevel(self.mainWindowObj.root)
+        self.columnSelectionWindowRoot.title(c.SELECT_COLUMNS_TITLE_STRING)
+        addIcon(self.columnSelectionWindowRoot)
+
+        instructionsLabel = Label(self.columnSelectionWindowRoot, text=c.SELECT_COLUMNS_STRING, anchor="w", justify="left")
+        instructionsLabel.grid(row=0, column=0, padx=pad, pady=pad, columnspan=maxElementsPerRow, sticky="w")
+
+        self.checkButtons = []
+        self.checkButtonVars = []
+        thisRow = 1
+        elementsInRow = 0
+
+        for value in c.VK_NAMES.values():
+            if value not in self.inputColumnsList and value != "":
+                # Create a check button for this column
+                self.checkButtonVars += [StringVar(value="")]
+                self.checkButtons += [ttk.Checkbutton(self.columnSelectionWindowRoot, text=value, variable=self.checkButtonVars[-1], offvalue="", onvalue=value)]
+                self.checkButtons[-1].grid(row=thisRow, column=elementsInRow, padx=pad, pady=pad, sticky="w")
+                elementsInRow += 1
+                if elementsInRow >= maxElementsPerRow:
+                    thisRow += 1
+                    elementsInRow = 0
+
+        columnSelectionOkButton = ttk.Button(self.columnSelectionWindowRoot, text=c.OK_STRING, command=self.closeColumnSelector)
+        columnSelectionOkButton.grid(row=thisRow+2, column=0, padx=pad, pady=pad, columnspan=maxElementsPerRow)
+
+        # Now cancel the user-initiated column addition
+        return None
+
+    def closeColumnSelector(self):
+        print(c.ADDING_COLUMNS_STRING + "".join((thisVar.get() + ", " for thisVar in self.checkButtonVars if thisVar.get() != ""))[:-2])
+        # Take the selected columns and add them to the input editor
+        newStrList = []
+        for var in self.checkButtonVars:
+            if (thisStr := var.get()) != "":
+                # Add this column
+                newStrList += [keyCodes(thisStr)]
+                self.keyCodesList += [keyCodes(thisStr)]
+
+        # Exit the column selection window
+        self.columnSelectionWindowRoot.destroy()
+
+        # Sort keyCodesList
+        self.keyCodesList.sort()
+
+        # Record the added columns
+        addedColumnIndices = []
+        for thisStr in newStrList:
+            addedColumnIndices += [self.keyCodesList.index(thisStr)]
+
+        inputKeynameColumnLabels = [""]*len(self.keyCodesList)
+
+        # Convert the input column labels to names
+        for i in range(len(inputKeynameColumnLabels)):
+            inputKeynameColumnLabels[i] = keyName(self.keyCodesList[i])
+
+        # Now check if mouse wheel was used
+        if len(self.inputColumnsList) >= 4 and "wheel" in self.inputColumnsList[-4]: # Two wheel columns for a total of four end columns
+            self.inputColumnsList = inputKeynameColumnLabels + self.inputColumnsList[-4:]
+        elif len(self.inputColumnsList) >= 3 and "wheel" in self.inputColumnsList[-3]: # One wheel column for a total of three end columns
+            self.inputColumnsList = inputKeynameColumnLabels + self.inputColumnsList[-3:]
+        else: # No wheel columns for a total of two end columns
+            self.inputColumnsList = inputKeynameColumnLabels + self.inputColumnsList[-2:]
+
+        # Add blank columns to the input data, ensuring they're done in order
+        addedColumnIndices.sort()
+        rotatedInputData = rotate2DArray(self.inputFormatMovieData)
+        for index in addedColumnIndices:
+            rotatedInputData.insert(index, [""]*len(self.inputFormatMovieData))
+
+        self.inputFormatMovieData = rotate2DArray(rotatedInputData)
+
+        # Now we have what we need to update the input grid
+        self.updateInputEditor()
+
     def onDrag(self, eventDict):
         if self.displayType == c.INPUTS_STRING:
             # First set the flag indicating that a drag has happened
@@ -551,3 +645,6 @@ class inputSheetClass:
             # Bad input, so cancel the user edit by returning None
             print(c.INVALID_INPUT_STRING)
             return None
+
+def addIcon(root):
+    root.iconbitmap(os.getcwd() + "/../img/gmreplay_logo.ico")
