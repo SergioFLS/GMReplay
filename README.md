@@ -66,6 +66,7 @@ GMReplay currently uses the following built-in Python packages:
 - subprocess
 - tkinter
 - webbrowser
+- traceback
 
 GMReplay also requires the following package, installable through pip:
 - tksheet
